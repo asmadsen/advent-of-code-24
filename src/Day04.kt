@@ -1,5 +1,3 @@
-private fun List<String>.asGrid() = map { it.toCharArray() }
-
 private data class ExpectChar(
     val expected: Char,
     val row: Int,
