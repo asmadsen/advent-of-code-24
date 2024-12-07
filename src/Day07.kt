@@ -1,3 +1,8 @@
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.runBlocking
+
 private val whitespaceRegex = Regex("\\s")
 private data class CalibrationEquation(val testValue: Long, val segments: List<Long>) {
     companion object {
@@ -53,24 +58,27 @@ private fun String.transform() = map {
 }
 
 fun main() {
-    fun part1(input: List<String>): Long {
+    fun part1(input: List<String>): Long = runBlocking {
         val ignoredOperators = setOf(Operator.Concatenation)
         val equations = input.map { CalibrationEquation.fromString(it) }
-        return equations.sumOf {
+
+        equations.sumOf {
             if (it.test(ignoredOperators)) {
                 it.testValue
             } else 0
         }
     }
 
-    fun part2(input: List<String>): Long  {
+    fun part2(input: List<String>): Long = runBlocking(Dispatchers.Default) {
         val ignoredOperators = emptySet<Operator>()
-        val equations = input.map { CalibrationEquation.fromString(it) }
-        return equations.sumOf {
-            if (it.test(ignoredOperators)) {
-                it.testValue
-            } else 0
-        }
+        input.map {
+            async {
+                val equation = CalibrationEquation.fromString(it)
+                if (equation.test(ignoredOperators)) {
+                    equation.testValue
+                } else 0
+            }
+        }.awaitAll().sum()
     }
 
     val testInput = readInput("Day07_test")
@@ -79,5 +87,5 @@ fun main() {
 
     val input = readInput("Day07")
     part1(input).println()
-    part2(input).println()
+        part2(input).println()
 }
