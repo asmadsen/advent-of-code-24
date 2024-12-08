@@ -11,9 +11,10 @@ fun readInput(name: String) = Path("src/$name.txt").readText().trim().lines()
 /**
  * Converts string to md5 hash.
  */
-fun String.md5() = BigInteger(1, MessageDigest.getInstance("MD5").digest(toByteArray()))
-    .toString(16)
-    .padStart(32, '0')
+fun String.md5() =
+    BigInteger(1, MessageDigest.getInstance("MD5").digest(toByteArray()))
+        .toString(16)
+        .padStart(32, '0')
 
 /**
  * The cleaner shorthand for printing output.
@@ -21,3 +22,26 @@ fun String.md5() = BigInteger(1, MessageDigest.getInstance("MD5").digest(toByteA
 fun Any?.println() = println(this)
 
 fun List<String>.asGrid() = map { it.toCharArray() }
+
+data class Point(
+    val x: Int,
+    val y: Int,
+) {
+    fun diff(other: Point) =
+        Point(
+            x = other.x - x,
+            y = other.y - y,
+        )
+
+    fun invert() =
+        copy(
+            x = x * -1,
+            y = y * -1,
+        )
+
+    operator fun plus(other: Point) =
+        copy(
+            x = x + other.x,
+            y = y + other.y,
+        )
+}
