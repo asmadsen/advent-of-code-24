@@ -23,6 +23,8 @@ fun Any?.println() = println(this)
 
 fun List<String>.asGrid() = map { it.toCharArray() }
 
+val whitespaceRegex = Regex("\\s")
+
 data class Point(
     val x: Int,
     val y: Int,

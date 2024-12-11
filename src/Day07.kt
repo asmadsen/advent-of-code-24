@@ -3,25 +3,34 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.runBlocking
 
-private val whitespaceRegex = Regex("\\s")
-private data class CalibrationEquation(val testValue: Long, val segments: List<Long>) {
+private data class CalibrationEquation(
+    val testValue: Long,
+    val segments: List<Long>,
+) {
     companion object {
         fun fromString(line: String): CalibrationEquation {
             val (testValue, segmentsString) = line.split(':')
             return CalibrationEquation(
                 testValue.trim().toLong(),
-                segmentsString.split(whitespaceRegex).mapNotNull { it.toLongOrNull() }
+                segmentsString.split(whitespaceRegex).mapNotNull { it.toLongOrNull() },
             )
         }
     }
 }
 
-private enum class Operator(val run: (Long, Long) -> Long) {
+private enum class Operator(
+    val run: (Long, Long) -> Long,
+) {
     Plus(Long::plus),
     Multiply(Long::times),
-    Concatenation( {a, b -> "$a$b".toLong() });
+    Concatenation({ a, b -> "$a$b".toLong() }),
+    ;
+
     companion object {
-        fun sequenceOfUniqueCombinations(size: Int, ignoredOperators: Set<Operator>): Sequence<List<Operator>> {
+        fun sequenceOfUniqueCombinations(
+            size: Int,
+            ignoredOperators: Set<Operator>,
+        ): Sequence<List<Operator>> {
             if (size == 0) return emptySequence()
             val uniqueOperators = Operator.entries - ignoredOperators
             if (size == 1) return uniqueOperators.map { listOf(it) }.asSequence()
@@ -36,50 +45,59 @@ private enum class Operator(val run: (Long, Long) -> Long) {
     }
 }
 
-
 private fun CalibrationEquation.test(ignoredOperators: Set<Operator>): Boolean {
     for (operators in Operator.sequenceOfUniqueCombinations(segments.size - 1, ignoredOperators)) {
-        if (testValue == segments.reduceIndexed { index, acc, i ->
+        if (testValue ==
+            segments.reduceIndexed { index, acc, i ->
                 operators[index - 1].run(acc, i)
-            }) {
+            }
+        ) {
             return true
         }
     }
     return false
 }
 
-
-private fun String.transform() = map {
-    when (it) {
-        '+' -> Operator.Plus
-        '*' -> Operator.Multiply
-        else -> error("unexpected")
-    }
-}
-
-fun main() {
-    fun part1(input: List<String>): Long = runBlocking {
-        val ignoredOperators = setOf(Operator.Concatenation)
-        val equations = input.map { CalibrationEquation.fromString(it) }
-
-        equations.sumOf {
-            if (it.test(ignoredOperators)) {
-                it.testValue
-            } else 0
+private fun String.transform() =
+    map {
+        when (it) {
+            '+' -> Operator.Plus
+            '*' -> Operator.Multiply
+            else -> error("unexpected")
         }
     }
 
-    fun part2(input: List<String>): Long = runBlocking(Dispatchers.Default) {
-        val ignoredOperators = emptySet<Operator>()
-        input.map {
-            async {
-                val equation = CalibrationEquation.fromString(it)
-                if (equation.test(ignoredOperators)) {
-                    equation.testValue
-                } else 0
+fun main() {
+    fun part1(input: List<String>): Long =
+        runBlocking {
+            val ignoredOperators = setOf(Operator.Concatenation)
+            val equations = input.map { CalibrationEquation.fromString(it) }
+
+            equations.sumOf {
+                if (it.test(ignoredOperators)) {
+                    it.testValue
+                } else {
+                    0
+                }
             }
-        }.awaitAll().sum()
-    }
+        }
+
+    fun part2(input: List<String>): Long =
+        runBlocking(Dispatchers.Default) {
+            val ignoredOperators = emptySet<Operator>()
+            input
+                .map {
+                    async {
+                        val equation = CalibrationEquation.fromString(it)
+                        if (equation.test(ignoredOperators)) {
+                            equation.testValue
+                        } else {
+                            0
+                        }
+                    }
+                }.awaitAll()
+                .sum()
+        }
 
     val testInput = readInput("Day07_test")
     check(part1(testInput) == 3749L)
@@ -87,5 +105,5 @@ fun main() {
 
     val input = readInput("Day07")
     part1(input).println()
-        part2(input).println()
+    part2(input).println()
 }
